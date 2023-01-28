@@ -185,12 +185,17 @@ fn calculate_vertex_normals(
 }
 
 mod tests {
+    #[cfg(feature = "nightly")]
     use super::instance_to_mesh;
+    #[cfg(feature = "nightly")]
     use blend::{Blend, Instance};
 
+    #[cfg(feature = "nightly")]
     extern crate test;
+    #[cfg(feature = "nightly")]
     use test::Bencher;
 
+    #[cfg(feature = "nightly")]
     fn get_mesh_by_name<'a>(blend: &'a Blend, name: &str) -> Option<Instance<'a>> {
         for mesh in blend.get_by_code(*b"ME") {
             if mesh.get("id").get_string("name") == name {
@@ -201,6 +206,7 @@ mod tests {
         None
     }
 
+    #[cfg(feature = "nightly")]
     #[bench]
     fn instance_to_mesh_cube_192(b: &mut Bencher) {
         let blend = Blend::from_path(
@@ -222,6 +228,7 @@ mod tests {
         });
     }
 
+    #[cfg(feature = "nightly")]
     #[bench]
     fn instance_to_mesh_cube_768(b: &mut Bencher) {
         let blend = Blend::from_path(
@@ -243,6 +250,7 @@ mod tests {
         });
     }
 
+    #[cfg(feature = "nightly")]
     #[bench]
     fn instance_to_mesh_cube_3072(b: &mut Bencher) {
         let blend = Blend::from_path(
@@ -264,6 +272,7 @@ mod tests {
         });
     }
 
+    #[cfg(feature = "nightly")]
     #[bench]
     fn instance_to_mesh_cube_12288(b: &mut Bencher) {
         let blend = Blend::from_path(
@@ -285,6 +294,7 @@ mod tests {
         });
     }
 
+    #[cfg(feature = "nightly")]
     #[bench]
     fn instance_to_mesh_cube_49125(b: &mut Bencher) {
         let blend = Blend::from_path(

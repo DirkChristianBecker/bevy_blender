@@ -14,26 +14,26 @@ fn main() {
 }
 
 fn setup(mut commands: Commands, asset_server: ResMut<AssetServer>) {
-    commands.spawn_bundle(PbrBundle {
+    commands.spawn(PbrBundle {
         mesh: asset_server.load(blender_mesh!("demo.blend", "Suzanne")),
         material: asset_server.load(blender_material!("demo.blend", "MetallicRed")),
         transform: Transform::from_translation(Vec3::new(-4.0, 0.0, 0.0)),
         ..Default::default()
     });
-    commands.spawn_bundle(PbrBundle {
+    commands.spawn(PbrBundle {
         mesh: asset_server.load(blender_mesh!("demo.blend", "Suzanne")),
         material: asset_server.load(blender_material!("demo.blend", "Green")),
         transform: Transform::from_translation(Vec3::new(0.0, 0.0, 0.0)),
         ..Default::default()
     });
-    commands.spawn_bundle(PbrBundle {
+    commands.spawn(PbrBundle {
         mesh: asset_server.load(blender_mesh!("demo.blend", "Suzanne")),
         material: asset_server.load(blender_material!("demo.blend", "RoughBlue")),
         transform: Transform::from_translation(Vec3::new(4.0, 0.0, 0.0)),
         ..Default::default()
     });
 
-    commands.spawn_bundle(PointLightBundle {
+    commands.spawn(PointLightBundle {
         transform: Transform::from_translation(Vec3::new(4.0, 8.0, 4.0)),
         ..Default::default()
     });
@@ -42,10 +42,11 @@ fn setup(mut commands: Commands, asset_server: ResMut<AssetServer>) {
     let radius = translation.length();
 
     commands
-        .spawn_bundle(PerspectiveCameraBundle {
+        .spawn(Camera3dBundle {
             transform: Transform::from_translation(translation).looking_at(Vec3::ZERO, Vec3::Y),
             ..Default::default()
         })
+        .insert(PerspectiveProjection::default())
         .insert(camera::PanOrbitCamera {
             radius,
             ..Default::default()

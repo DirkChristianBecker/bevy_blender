@@ -254,7 +254,7 @@ fn spawn_blender_object_with_error(
     };
 
     // Spawn Bundle
-    commands.spawn_bundle(bundle).with_children(|parent| {
+    commands.spawn(bundle).with_children(|parent| {
         if !spawn_children {
             return;
         }
@@ -319,7 +319,7 @@ fn spawn_children_objects(
     };
 
     // Spawn Bundle
-    builder.spawn_bundle(bundle).with_children(|parent| {
+    builder.spawn(bundle).with_children(|parent| {
         for child in get_children(&blend, obj.get("id").get_string("name").as_str()) {
             spawn_children_objects(
                 parent,
