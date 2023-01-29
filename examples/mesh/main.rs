@@ -2,14 +2,15 @@ use bevy::prelude::*;
 use bevy_blender::*;
 
 // Use pan orbit camera
-mod camera;
+use bevy_cameras::prelude::*;
+use bevy_cameras::prelude::Camera;
 
 fn main() {
     App::new()
         .add_plugins(DefaultPlugins)
         .add_plugin(BlenderPlugin)
+        .add_plugin(PanOrbitCamera::default())
         .add_startup_system(setup)
-        .add_system(camera::pan_orbit_camera)
         .run();
 }
 
@@ -45,16 +46,6 @@ fn setup(
     });
 
     let translation = Vec3::new(5.0, 5.0, 5.0);
-    let radius = translation.length();
-
-    commands
-        .spawn(Camera3dBundle {
-            transform: Transform::from_translation(translation).looking_at(Vec3::ZERO, Vec3::Y),
-            ..Default::default()
-        })
-        .insert(PerspectiveProjection::default())
-        .insert(camera::PanOrbitCamera {
-            radius,
-            ..Default::default()
-        });
+    let look_at = Vec3::ZERO;
+    PanOrbitCamera::init_camera(&mut commands, translation, look_at);
 }

@@ -24,6 +24,7 @@ bevy_pbr = "0.9.1"
 bevy_transform = "0.9.1"
 anyhow = ">=1.0"
 thiserror = ">=1.0"
+bevy_cameras = { git = "https://github.com/DirkChristianBecker/bevy_cameras"}
 
 [dev-dependencies]
 
