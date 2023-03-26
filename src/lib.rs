@@ -50,6 +50,9 @@ use bevy_math::{Mat4, Quat, Vec3};
 use bevy_utils::BoxedFuture;
 use blend::Blend;
 
+use libflate::gzip::Decoder;
+use std::io::Read;
+
 mod material;
 mod mesh;
 mod object;
@@ -110,7 +113,9 @@ impl AssetLoader for BlenderLoader {
         bytes: &'a [u8],
         load_context: &'a mut LoadContext,
     ) -> BoxedFuture<'a, anyhow::Result<()>> {
-        Box::pin(async move { Ok(load_blend_assets(bytes, load_context).await?) })
+        Box::pin(async move { 
+            Ok(load_blend_assets(bytes, load_context).await?) 
+        })
     }
 
     fn extensions(&self) -> &[&str] {
@@ -123,18 +128,28 @@ async fn load_blend_assets<'a, 'b>(
     bytes: &'a [u8],
     load_context: &'a mut LoadContext<'b>,
 ) -> anyhow::Result<()> {
-    // Check to make sure that the blender file has the magic number
+    let mut b = bytes;
+    let mut gzip_data = Vec::new();
+    
+    // Asume that the file is compresse, if the magic number does not exist.
+    // See: https://github.com/lukebitts/blend/blob/master/examples/print_blend/main.rs
     if bytes[0..7] != *b"BLENDER" {
+        let mut decoder = Decoder::new(&bytes[..])?;
+        decoder.read_to_end(&mut gzip_data)?;
+
+        b = &gzip_data;
+    }
+
+    if b[0..7] != *b"BLENDER" {
         return Err(anyhow::Error::new(BevyBlenderError::InvalidBlendFile {
             blend_file: String::from(load_context.path().to_str().unwrap()),
         }));
     }
 
-    //let blend_version = (bytes[9] - 48, bytes[10] - 48, bytes[11] - 48);
-
-    // TODO: check for compressed blend file and decompress if necessary
-    let blend = Blend::new(bytes);
+    let blend = Blend::new(b);
     let blend_version = get_blend_version(&blend);
+
+    info!("'{}' has blend version: {:?}", load_context.path().to_str().unwrap(), blend_version);
 
     // Load mesh assets
     for mesh in blend.get_by_code(*b"ME") {
@@ -148,6 +163,7 @@ async fn load_blend_assets<'a, 'b>(
                 label.as_str(),
                 LoadedAsset::new(mesh::instance_to_mesh(mesh, blend_version)?),
             );
+
             info!("Loaded Blender mesh asset: {}", label);
         }
     }
@@ -168,6 +184,7 @@ async fn load_blend_assets<'a, 'b>(
             ..Default::default()
         }),
     );
+
     // Load material assets
     for material in blend.get_by_code(*b"MA") {
         // Get the name of the material
@@ -189,15 +206,6 @@ async fn load_blend_assets<'a, 'b>(
                     label
                 );
             }
-            // match mat {
-            //     Ok(m) => load_context.set_labeled_asset(label.as_str(), LoadedAsset::new(m)),
-            //     Err(e) => println!("Material {} could not be loaded", label),
-            // };
-            // Add the created material with the proper label
-            // load_context.set_labeled_asset(
-            //     label.as_str(),
-            //     LoadedAsset::new(material::instance_to_material(material, blend_version)?),
-            // );
         }
     }
 
@@ -226,7 +234,6 @@ pub fn right_hand_zup_to_right_hand_yup(rhzup: &Mat4) -> Mat4 {
 /// Takes a blend::Blend struct and returns the correct version tuple
 pub fn get_blend_version(blend: &Blend) -> (u8, u8, u8) {
     let version_raw = blend.blend.header.version;
-
     (
         version_raw[0] - 48,
         version_raw[1] - 48,

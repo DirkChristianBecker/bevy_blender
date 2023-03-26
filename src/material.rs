@@ -38,6 +38,7 @@ pub(crate) fn instance_to_material(
                 instance.get_f32("b"),
                 instance.get_f32("a"),
             ),
+            
             perceptual_roughness: instance.get_f32("roughness"),
             metallic: instance.get_f32("metallic"),
             reflectance: instance.get_f32("spec"),
@@ -45,7 +46,7 @@ pub(crate) fn instance_to_material(
         });
     }
 
-    // If we are here then the material is nodes based, which is not currently supported.
+    // If we are here then the material is nodes based, which is currently not supported.
     Err(anyhow::Error::new(BevyBlenderError::UnsupportedAsset {
         asset_type: String::from("Nodes based material"),
     }))

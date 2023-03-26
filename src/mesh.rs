@@ -3,8 +3,9 @@ use bevy_render::{
     mesh::{Indices, Mesh},
     render_resource::PrimitiveTopology,
 };
-use blend::runtime::Instance;
+use bevy::prelude::*;
 
+use blend::runtime::Instance;
 use crate::BevyBlenderError;
 
 /// Takes a .blend file location and a mesh name and generates
@@ -30,6 +31,9 @@ pub(crate) fn instance_to_mesh(
         }));
     }
 
+    let name = instance.get("id").get_string("name");
+    info!("Reading element {}", name);
+
     // Takes a normalized i16 vector from instance, and converts it to a normalized f32 vector
     fn no_to_f32(no: Vec<i16>) -> Vec<f32> {
         let mut v = Vec::new();
@@ -39,11 +43,33 @@ pub(crate) fn instance_to_mesh(
         v
     }
 
+    // Print fields
+    for (name, _field) in instance.fields.iter()
+    {
+        info!("Found field {}", name);
+    }
+
     // Extract Blender DNA blocks from instance
-    let blender_faces = instance.get_iter("mpoly").collect::<Vec<_>>();
-    let blender_loops = instance.get_iter("mloop").collect::<Vec<_>>();
-    let blender_uvs = instance.get_iter("mloopuv").collect::<Vec<_>>();
-    let blender_verts = instance.get_iter("mvert").collect::<Vec<_>>();
+    let mut blender_faces : Vec<Instance> = Vec::new();
+    let mut blender_loops : Vec<Instance> = Vec::new();
+    let mut blender_uvs : Vec<Instance> = Vec::new();
+    let mut blender_verts : Vec<Instance> = Vec::new();
+
+    if instance.is_valid("mpoly") {
+        blender_faces = instance.get_iter("mpoly").collect::<Vec<_>>();
+    }
+
+    if instance.is_valid("mloop") {
+        blender_loops = instance.get_iter("mloop").collect::<Vec<_>>();
+    }
+
+    if instance.is_valid("mloopuv") {
+        blender_uvs = instance.get_iter("mloopuv").collect::<Vec<_>>();
+    }
+
+    if instance.is_valid("mvert") {
+        blender_verts = instance.get_iter("mvert").collect::<Vec<_>>();
+    }
 
     // Create empty index list
     let mut indices: Vec<u32> = Vec::new();
@@ -53,6 +79,7 @@ pub(crate) fn instance_to_mesh(
         let start = blender_face.get_i32("loopstart");
         let end = start + blender_face.get_i32("totloop");
         let mut faceloop: Vec<u32> = Vec::new();
+
         for i in start..end {
             faceloop.push(blender_loops[i as usize].get_i32("v") as u32);
         }
@@ -82,7 +109,6 @@ pub(crate) fn instance_to_mesh(
             }
 
             face.push(faceloop[j]);
-
             faces.push(face);
 
             faceloop.remove(i);
@@ -118,6 +144,7 @@ pub(crate) fn instance_to_mesh(
                 normals.push([n[0], n[2], -n[1]]);
             }
         }
+
         (3.., _, _) => {
             normals = calculate_vertex_normals(&blender_faces, &blender_loops, &positions);
         }
@@ -155,6 +182,7 @@ fn calculate_vertex_normals(
         for i in start..end {
             faceloop.push(blender_loops[i as usize].get_i32("v") as u32);
         }
+
         // Calculate face normal as cross product of first and last edge in loop
         let v1 = positions[faceloop[0] as usize];
         let v2 = positions[faceloop[1] as usize];
@@ -170,12 +198,14 @@ fn calculate_vertex_normals(
             while vertex >= normals.len() as u32 {
                 normals.push(Vec3::new(0.0, 0.0, 0.0));
             }
+
             // Add face normal to vertex index
             normals[vertex as usize] += n;
         }
     }
 
     let mut normals_out: Vec<[f32; 3]> = Vec::new();
+
     // Normalize vertex normals and cast to proper type
     for normal in normals {
         normals_out.push(normal.normalize().into());
